@@ -33,7 +33,7 @@ exports.resize = async (req, res, next) => {
     return;
   }
   const extension = req.file.mimetype.split('/')[1];
-  req.body.photo = `${uuid.v4()}.${extension}}`
+  req.body.photo = `${uuid.v4()}.${extension}`
   const photo = await jimp.read(req.file.buffer);
   await photo.resize(800, jimp.AUTO);
   await photo.write(`./public/uploads/${req.body.photo}`);
@@ -69,3 +69,9 @@ exports.updateStore = async (req, res) => {
 req.flash('success', `Successfully updated <strong>${store.name}</strong>. <a href="/stores/${store.slug}">View Store</a>`);
 res.redirect(`/stores/${store._id}/edit`);
 }
+
+exports.getStoreBySlug = async (req, res, next) => {
+  const store = await Store.findOne({ slug: req.params.slug })
+  if (!store) return next();
+  res.render('store', { store, title: store.name })
+};
