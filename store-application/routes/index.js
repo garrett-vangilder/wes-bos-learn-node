@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const storeController = require('../controllers/storeController')
+const storeController = require('../controllers/storeController');
+const userController = require('../controllers/userController');
+const authController = require('../controllers/authController');
 const { catchErrors } = require('../handlers/errorHandlers');
 
 // Do work here
@@ -11,6 +13,8 @@ router.get('/tags', catchErrors(storeController.getStoresByTag));
 router.get('/tags/:tag', catchErrors(storeController.getStoresByTag));
 router.get('/store/:slug', catchErrors(storeController.getStoreBySlug));
 router.get('/stores/:id/edit', catchErrors(storeController.editStore));
+router.get('/login', userController.loginForm);
+router.get('/register', userController.registerForm);
 router.post('/add', 
   storeController.upload, 
   catchErrors(storeController.resize),
@@ -23,9 +27,10 @@ router.post('/add/:id',
   catchErrors(storeController.updateStore)
 );
 
-router.get('/reverse/:name', (req, res) => {
-  const reverse = [...req.params.name].reverse().join('');
-  res.send(reverse);
-});
+router.post('/register', 
+  userController.validateRegister,
+  userController.register,
+  authController.login
+);
 
 module.exports = router;
