@@ -17,6 +17,7 @@ router.get('/login', userController.loginForm);
 router.get('/register', userController.registerForm);
 router.get('/logout', authController.logout);
 router.get('/account', authController.isLoggedIn, userController.account);
+router.get('/account/reset/:token', catchErrors(authController.reset));
 router.post('/account', catchErrors(userController.updateAccount));
 router.post('/login', authController.login);
 router.post('/add', 
@@ -35,6 +36,12 @@ router.post('/register',
   userController.validateRegister,
   userController.register,
   authController.login
+);
+
+router.post('/account/forgot', catchErrors(authController.forgot))
+router.post('/account/reset/:token', 
+  authController.confirmedPasswords,
+  catchErrors(authController.update)
 );
 
 
