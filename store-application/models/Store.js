@@ -38,6 +38,9 @@ const storeSchema = new mongoose.Schema({
     ref: 'User',
     required: "You must supple an author."
   }
+}, {
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
 });
 
 storeSchema.index({
@@ -51,11 +54,10 @@ storeSchema.index({
 
 storeSchema.pre('save', async function(next) {
   if (!this.isModified('name')) {
-    next(); // skip it
-    return; // stops this function from running
+    next(); 
+    return; 
   }
   this.slug = slug(this.name);
-  // find other similar stores garrett, garrett-1, garrett-2
   const slugRegEx = new RegExp(`^(${this.slug})((-[0-9]*$)?)$`, 'i');
   const storesWithSlug = await this.constructor.find({ slug: slugRegEx });
   if(storesWithSlug.length) {
@@ -72,5 +74,41 @@ storeSchema.statics.getTagsList = function() {
     { $sort: { count: -1 } }
   ]);
 }
+
+storeSchema.virtual('reviews', {
+  ref: 'Review',
+  localField: '_id',
+  foreignField: 'store'
+});
+
+storeSchema.statics.getTopStores = function() {
+  return this.aggregate([
+    { $lookup: {
+      from: 'reviews', 
+      localField: '_id' ,
+      foreignField: 'store',
+      as: 'reviews' 
+      }
+    },
+    { $match: { 'reviews.1': { $exists: true } } },
+    { $project: {
+      photo: '$$ROOT',
+      name: '$$ROOT',
+      reviews: '$$ROOT',
+      averageRating: { $avg: '$reviews.rating' }
+    }},
+    { $sort: { averageRating: -1 } },
+    { $limit: 10 }
+  ])
+}
+
+function autoPopulate(next) {
+  this.populate('reviews');
+  next();
+}
+
+storeSchema.pre('find', autoPopulate);
+storeSchema.pre('findOne', autoPopulate);
+
 
 module.exports = mongoose.model('Store', storeSchema);
